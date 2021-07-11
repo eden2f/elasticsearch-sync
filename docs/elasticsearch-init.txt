@@ -1,0 +1,20 @@
+# 创建index
+curl --location --request PUT 'http://localhost:9200/user'
+
+# 初始化mapping结构
+curl --location --request POST 'http://localhost:9200/user/_mapping' \
+--header 'Content-Type: application/json' \
+--data-raw '{"properties":{"userId":{"type":"long"},"name":{"type":"keyword"},"age":{"type":"integer"},"email":{"type":"keyword"},"headPortrait":{"type":"text"},"imgs":{"type":"text"},"userOperationLogs":{"properties":{"id":{"type":"long"},"userId":{"type":"long"},"desc":{"type":"text"}}}}}'
+
+# 查询mapping结构
+curl --location --request GET 'http://localhost:9200/user/_mapping' \
+--header 'Content-Type: application/json'
+
+# 查询所有文档
+curl --location --request POST 'http://localhost:9200/user/_search/' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "query" : { "match_all" : {}}
+}'
+
+
