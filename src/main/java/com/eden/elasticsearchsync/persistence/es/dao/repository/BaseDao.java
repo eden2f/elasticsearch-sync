@@ -45,7 +45,7 @@ public abstract class BaseDao {
         String className = this.getClass().getSimpleName();
         List<T> pos = new ArrayList<>();
         SearchRequest request = new SearchRequest();
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(QueryBuilders.matchPhraseQuery("userId", userId));
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(QueryBuilders.matchPhraseQuery("_id", userId));
         request.source(searchSourceBuilder);
         request.indices(ElasticsearchConfig.ES_INDEX_NAME);
         request.types(ElasticsearchConfig.ES_TYPE_NAME);
@@ -101,7 +101,8 @@ public abstract class BaseDao {
                 }
             }
         } else {
-            IndexRequest request = new IndexRequest(ElasticsearchConfig.ES_INDEX_NAME, ElasticsearchConfig.ES_TYPE_NAME);
+            String esId = String.valueOf(po.getUserId());
+            IndexRequest request = new IndexRequest(ElasticsearchConfig.ES_INDEX_NAME, ElasticsearchConfig.ES_TYPE_NAME, esId);
             request.source(JSON.toJSONString(po), XContentType.JSON);
             IndexResponse response;
             try {

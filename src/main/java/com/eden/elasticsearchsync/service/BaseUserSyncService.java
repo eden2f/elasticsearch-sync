@@ -34,9 +34,12 @@ public abstract class BaseUserSyncService implements UserSyncService {
         } catch (Exception e) {
             throw new EsSyncConcurrentLockException(e);
         }
-        BaseEsPo po = selectOneByUserId(userId);
-        insertOrUpdate(po);
-        redisUtil.remove(redisKey);
+        try {
+            BaseEsPo po = selectOneByUserId(userId);
+            insertOrUpdate(po);
+        } finally {
+            redisUtil.remove(redisKey);
+        }
     }
 
     /**
