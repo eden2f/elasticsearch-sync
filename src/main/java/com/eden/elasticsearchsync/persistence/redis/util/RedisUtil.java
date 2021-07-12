@@ -58,11 +58,6 @@ public class RedisUtil {
         }
     }
 
-    /**
-     * @param key
-     * @param scoreMembers
-     * @return
-     */
     public Long zadd(String key, Map<String, Double> scoreMembers) {
         try (Jedis jedis = jedisPool.getResource()) {
             return jedis.zadd(key, scoreMembers);
@@ -122,18 +117,6 @@ public class RedisUtil {
         return res;
     }
 
-    public String getOrElseIgnore(String key) {
-        if (StringUtils.isBlank(key)) {
-            return null;
-        }
-        try (Jedis jedis = jedisPool.getResource()) {
-            return jedis.get(key);
-        } catch (Exception e) {
-            log.info("获取缓存失败,key={}", key, e);
-            return null;
-        }
-    }
-
     public String get(String key) {
         if (StringUtils.isBlank(key)) {
             return null;
@@ -147,7 +130,7 @@ public class RedisUtil {
     }
 
     public long remove(String key) {
-        long ret = 0;
+        long ret;
         try (Jedis jedis = jedisPool.getResource()) {
             ret = jedis.del(key);
         }
