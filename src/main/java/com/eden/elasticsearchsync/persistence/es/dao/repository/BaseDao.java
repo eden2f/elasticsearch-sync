@@ -1,6 +1,7 @@
 package com.eden.elasticsearchsync.persistence.es.dao.repository;
 
 import com.alibaba.fastjson.JSON;
+import com.eden.elasticsearchsync.enums.DelStatus;
 import com.eden.elasticsearchsync.persistence.es.config.ElasticsearchConfig;
 import com.eden.elasticsearchsync.persistence.es.dao.po.BaseEsPo;
 import lombok.Getter;
@@ -20,6 +21,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.Resource;
 import java.io.IOException;
@@ -37,6 +39,8 @@ public abstract class BaseDao {
 
     @Resource
     protected RestHighLevelClient restHighLevelClient;
+    @Value("${es.consumer.log.enable:0}")
+    protected Integer logEnable;
 
     protected static final Integer MAX_BULK_SIZE = 100;
 
@@ -52,7 +56,9 @@ public abstract class BaseDao {
         try {
             log.info("className = {}, restHighLevelClient.search, req = {}", className, JSON.toJSONString(request));
             SearchResponse response = restHighLevelClient.search(request, RequestOptions.DEFAULT);
-            log.info("className = {}, restHighLevelClient.search, res = {}", className, JSON.toJSONString(response));
+            if (DelStatus.DELETED.getCode() == logEnable) {
+                log.info("className = {}, restHighLevelClient.search, res = {}", className, JSON.toJSONString(response));
+            }
             for (SearchHit hit : response.getHits().getHits()) {
                 String id = hit.getId();
                 T po = JSON.parseObject(hit.getSourceAsString(), clazz);
@@ -88,7 +94,9 @@ public abstract class BaseDao {
             try {
                 log.info("className = {}, restHighLevelClient.update req = {}", className, JSON.toJSONString(request));
                 response = restHighLevelClient.update(request, RequestOptions.DEFAULT);
-                log.info("className = {}, restHighLevelClient.update res = {}", className, JSON.toJSONString(response));
+                if (DelStatus.DELETED.getCode() == logEnable) {
+                    log.info("className = {}, restHighLevelClient.update res = {}", className, JSON.toJSONString(response));
+                }
             } catch (ElasticsearchException | IOException e) {
                 log.info("className = {}, 同步es失败, userId = {}", className, po.getUserId());
                 throw new RuntimeException(e);
@@ -108,7 +116,9 @@ public abstract class BaseDao {
             try {
                 log.info("className = {}, restHighLevelClient.index req = {}", className, JSON.toJSONString(request));
                 response = restHighLevelClient.index(request, RequestOptions.DEFAULT);
-                log.info("className = {}, restHighLevelClient.index res = {}", className, JSON.toJSONString(response));
+                if (DelStatus.DELETED.getCode() == logEnable) {
+                    log.info("className = {}, restHighLevelClient.index res = {}", className, JSON.toJSONString(response));
+                }
             } catch (ElasticsearchException | IOException e) {
                 log.info("className = {}, 同步es失败, userId = {}", className, po.getUserId());
                 throw new RuntimeException(e);

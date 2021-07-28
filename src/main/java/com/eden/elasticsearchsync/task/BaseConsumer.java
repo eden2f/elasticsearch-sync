@@ -29,6 +29,8 @@ public abstract class BaseConsumer {
     protected Integer queueSizeAlarmEnable;
     @Value("${es.consumer.queue.size.threshold.multiple:10}")
     protected Integer queueSizeThresholdMultiple;
+    @Value("${es.consumer.log.enable:0}")
+    protected Integer logEnable;
 
     private final UserSyncService userSyncService;
 

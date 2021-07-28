@@ -47,9 +47,12 @@ public abstract class BaseProducer {
         if (StringUtils.isBlank(updateTimeStart)) {
             updateTimeStart = defaultUpdateTimeStart;
         }
-        String updateTimeEnd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        Date updateTimeEndDate = new Date();
+        long updateTimeEndeSecond = updateTimeEndDate.getTime() / 1000;
+        String updateTimeEnd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(updateTimeEndDate);
         Long latestMaxPrimaryKey = 0L;
         List<Long> updatedDataPrimaryKeys;
+        double maxScore = 0;
         do {
             log.info("taskName = {}, primaryKeyColumnName = {}, tableName = {}, updateColumnName = {}, updateTimeStart = {}, updateTimeEnd = {}, latestMaxPrimaryKey = {}, maxSize = {}",
                     taskName, primaryKeyColumnName, tableName, updateColumnName, updateTimeStart, updateTimeEnd, latestMaxPrimaryKey, maxSize);
@@ -69,13 +72,16 @@ public abstract class BaseProducer {
                         Object userIdObject = updatedData.get(uniqueColumnName);
                         String userIdString = String.valueOf(userIdObject);
                         Double score = redisUtil.zscore(producerQueueRedisKey, userIdString);
+                        LocalDateTime updateTime = (LocalDateTime) updatedData.get(updateColumnName);
+                        double updateTimeDouble = (double) (updateTime == null ? 0L : updateTime.toEpochSecond(DateUtil.ZONE_OFFSET));
                         if (score != null) {
                             log.info("score != null, userIdString = {}", userIdString);
                         } else {
                             log.info("score == null, userIdString = {}", userIdString);
-                            LocalDateTime updateTime = (LocalDateTime) updatedData.get(updateColumnName);
-                            Double updateTimeDouble = (double) (updateTime == null ? 0L : updateTime.toEpochSecond(DateUtil.ZONE_OFFSET));
                             scoreMembers.put(userIdString, updateTimeDouble);
+                        }
+                        if (updateTimeDouble > maxScore && updateTimeDouble <= updateTimeEndeSecond) {
+                            maxScore = updateTimeDouble;
                         }
                     }
                     if (!scoreMembers.isEmpty()) {
@@ -90,7 +96,13 @@ public abstract class BaseProducer {
                 latestMaxPrimaryKey = 0L;
             }
         } while (CollectionUtils.size(updatedDataPrimaryKeys) >= maxSize && latestMaxPrimaryKey > 0L);
-        redisUtil.set(updateTimeStartRedisKey, updateTimeEnd, 60 * 60 * 24 * 30);
+
+        if (maxScore > 0) {
+            Date maxScoreDate = new Date((long) (maxScore * 1000));
+            String maxScoreDateString = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(maxScoreDate);
+            log.info("taskName = {}, maxScoreDateString = {}, updateTimeEnd = {}", taskName, maxScoreDateString, updateTimeEnd);
+            redisUtil.set(updateTimeStartRedisKey, updateTimeEnd, 60 * 60 * 24 * 30);
+        }
         log.info("taskName = {}, produce end, cost : {} ms", taskName, System.currentTimeMillis() - startTime);
     }
 }
